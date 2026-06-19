@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>이상형 월드컵 메이커</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;800;900&family=Black+Han+Sans&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d0d0f;
+      --surface: #18181c;
+      --surface2: #222228;
+      --border: #2e2e38;
+      --accent: #ff3f6c;
+      --accent2: #ff7043;
+      --text: #f0f0f5;
+      --muted: #8888a0;
+      --card-r: 14px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Sans KR', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── 헤더 ── */
+    header {
+      padding: 28px 32px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .logo-text {
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: 22px;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .logo-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    /* ── 메인 레이아웃 ── */
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    .step-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: clamp(28px, 5vw, 42px);
+      line-height: 1.15;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 15px;
+      margin-bottom: 40px;
+    }
+
+    /* ── 카드 ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--card-r);
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+    }
+
+    /* ── 인풋 ── */
+    input[type="text"], textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 15px;
+      padding: 12px 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus, textarea:focus {
+      border-color: var(--accent);
+    }
+    textarea { resize: vertical; min-height: 80px; }
+
+    /* ── 후보 그리드 ── */
+    .candidates-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .candidate-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+      aspect-ratio: 3/4;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .candidate-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .candidate-card .img-area {
+      width: 100%; height: 70%;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+    .candidate-card .img-area img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .candidate-card .img-placeholder {
+      font-size: 36px;
+      color: var(--border);
+    }
+    .candidate-card .name-area {
+      padding: 8px 10px;
+      height: 30%;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .candidate-card .cand-name {
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .candidate-card .cand-desc {
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .remove-btn {
+      position: absolute;
+      top: 6px; right: 6px;
+      width: 22px; height: 22px;
+      background: rgba(0,0,0,0.7);
+      border: none; border-radius: 50%;
+      color: #fff; font-size: 12px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .candidate-card:hover .remove-btn { opacity: 1; }
+
+    /* ── 후보 추가 버튼 ── */
+    .add-card {
+      background: transparent;
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      aspect-ratio: 3/4;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .add-card:hover { border-color: var(--accent); background: rgba(255,63,108,0.05); color: var(--accent); }
+    .add-card .plus { font-size: 28px; }
+
+    /* ── 추가 모달 ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 32px;
+      width: min(480px, 90vw);
+      transform: translateY(20px);
+      transition: transform 0.2s;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal h3 { font-size: 18px; font-weight: 800; margin-bottom: 20px; }
+    .modal-field { margin-bottom: 14px; }
+    .modal-field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+
+    /* 이미지 업로드 */
+    .img-upload-area {
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      height: 160px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      overflow: hidden;
+      position: relative;
+    }
+    .img-upload-area:hover { border-color: var(--accent); }
+    .img-upload-area img { width: 100%; height: 100%; object-fit: cover; }
+    .img-upload-area .upload-hint { font-size: 13px; color: var(--muted); }
+    .img-upload-area .upload-icon { font-size: 32px; }
+    #fileInput { display: none; }
+
+    .modal-actions {
+      display: flex; gap: 10px; margin-top: 22px;
+    }
+    .btn {
+      flex: 1; padding: 12px;
+      border-radius: 9px; border: none;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+    }
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn:hover { opacity: 0.88; }
+
+    /* ── 설정 옵션 ── */
+    .options-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .option-btn {
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .option-btn.active {
+      border-color: var(--accent);
+      background: rgba(255,63,108,0.12);
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* ── 생성 버튼 ── */
+    .generate-section { text-align: center; margin-top: 36px; }
+    .generate-btn {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      padding: 18px 48px;
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: 20px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 24px rgba(255,63,108,0.35);
+      letter-spacing: 1px;
+    }
+    .generate-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(255,63,108,0.45);
+    }
+    .generate-btn:active { transform: translateY(0); }
+    .generate-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .gen-hint {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* ── 공유 링크 결과 ── */
+    .share-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      margin-top: 24px;
+      display: none;
+    }
+    .share-box.show { display: block; }
+    .share-box h3 {
+      font-size: 18px; font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .share-box p { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+    .link-row {
+      display: flex; gap: 10px;
+    }
+    .link-input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      padding: 10px 12px;
+      font-family: monospace;
+    }
+    .copy-btn {
+      padding: 10px 18px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.15s;
+    }
+    .copy-btn:hover { opacity: 0.85; }
+    .play-link-btn {
+      display: block;
+      margin-top: 12px;
+      text-align: center;
+      padding: 12px;
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 14px;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .play-link-btn:hover { background: rgba(255,63,108,0.1); }
+
+    /* ── 카운터 ── */
+    .count-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+    .count-badge .num { color: var(--accent); font-weight: 800; }
+
+    /* ── 하단 URL 입력 안내 ── */
+    .url-tip {
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .img-url-toggle {
+      font-size: 12px;
+      color: var(--accent);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">🏆</div>
+  <div>
+    <div class="logo-text">이상형 월드컵 메이커</div>
+    <div class="logo-sub">만들고 · 공유하고 · 즐겨라</div>
+  </div>
+</header>
+
+<main>
+  <div class="step-label">Step 1</div>
+  <h1>내 월드컵을<br>직접 만들어봐</h1>
+  <p class="subtitle">후보를 추가하고 링크 하나로 친구들과 공유할 수 있어요.</p>
+
+  <!-- 기본 정보 -->
+  <div class="card">
+    <div class="card-title">🎯 월드컵 이름</div>
+    <input type="text" id="wcTitle" placeholder="예) 내 최애 라면 월드컵, 여행지 이상형 월드컵..." maxlength="50" />
+    <div class="modal-field" style="margin-top:12px;">
+      <label>설명 (선택)</label>
+      <textarea id="wcDesc" placeholder="간단한 설명을 적어보세요..." maxlength="150" rows="2"></textarea>
+    </div>
+  </div>
+
+  <!-- 후보 -->
+  <div class="card">
+    <div class="card-title">⚔️ 후보 목록</div>
+    <div class="count-badge"><span class="num" id="countNum">0</span> 명 추가됨 <span style="margin-left:4px;">· 최소 4명 필요</span></div>
+
+    <div class="candidates-grid" id="candidatesGrid">
+      <div class="add-card" onclick="openModal()">
+        <div class="plus">＋</div>
+        <div>후보 추가</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 라운드 설정 -->
+  <div class="card">
+    <div class="card-title">🎮 라운드 설정</div>
+    <div class="options-row" id="roundOptions">
+      <button class="option-btn active" data-r="4">4강</button>
+      <button class="option-btn" data-r="8">8강</button>
+      <button class="option-btn" data-r="16">16강</button>
+      <button class="option-btn" data-r="32">32강</button>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-top:10px;" id="roundHint">후보를 4명 이상 추가하면 라운드를 선택할 수 있어요.</p>
+  </div>
+
+  <!-- 생성 버튼 -->
+  <div class="generate-section">
+    <button class="generate-btn" id="generateBtn" disabled onclick="generateLink()">
+      🔗 공유 링크 생성하기
+    </button>
+    <p class="gen-hint">후보를 4명 이상 추가하면 활성화돼요</p>
+  </div>
+
+  <!-- 공유 링크 결과 -->
+  <div class="share-box" id="shareBox">
+    <h3>🎉 링크가 생성됐어요!</h3>
+    <p>아래 링크를 복사해서 친구들에게 공유해보세요</p>
+    <div class="link-row">
+      <input type="text" class="link-input" id="shareLink" readonly />
+      <button class="copy-btn" onclick="copyLink()">복사</button>
+    </div>
+    <a href="#" id="playNowBtn" class="play-link-btn" target="_blank">▶ 지금 바로 플레이하기</a>
+  </div>
+</main>
+
+<!-- 후보 추가 모달 -->
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <h3>✨ 후보 추가</h3>
+
+    <div class="modal-field">
+      <label>이름 *</label>
+      <input type="text" id="candName" placeholder="후보 이름" maxlength="30" />
+    </div>
+
+    <div class="modal-field">
+      <label>설명 (선택)</label>
+      <input type="text" id="candDesc" placeholder="짧은 설명" maxlength="40" />
+    </div>
+
+    <div class="modal-field">
+      <label>이미지</label>
+      <div class="img-upload-area" id="imgUploadArea" onclick="triggerFileOrUrl()">
+        <div class="upload-icon">🖼️</div>
+        <div class="upload-hint">클릭해서 이미지 업로드</div>
+        <img id="previewImg" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" />
+      </div>
+      <button class="img-url-toggle" onclick="toggleUrlInput()">또는 이미지 URL 입력하기</button>
+      <div id="urlInputWrap" style="display:none; margin-top:8px;">
+        <input type="text" id="candImgUrl" placeholder="https://..." oninput="previewUrl()" />
+        <div class="url-tip">직접 링크 (이미지 URL)를 붙여넣으세요</div>
+      </div>
+    </div>
+
+    <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)" />
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">취소</button>
+      <button class="btn btn-primary" onclick="addCandidate()">추가하기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let candidates = [];
+  let selectedRound = 4;
+  let currentImageData = null; // base64 or URL
+
+  // ── 모달 ──
+  function openModal() {
+    document.getElementById('modalOverlay').classList.add('open');
+    document.getElementById('candName').focus();
+    currentImageData = null;
+    document.getElementById('previewImg').style.display = 'none';
+    document.getElementById('candName').value = '';
+    document.getElementById('candDesc').value = '';
+    document.getElementById('candImgUrl').value = '';
+    document.getElementById('urlInputWrap').style.display = 'none';
+  }
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('modalOverlay')) closeModal();
+  }
+
+  // ── 이미지 ──
+  function triggerFileOrUrl() {
+    document.getElementById('fileInput').click();
+  }
+  function toggleUrlInput() {
+    const wrap = document.getElementById('urlInputWrap');
+    wrap.style.display = wrap.style.display === 'none' ? 'block' : 'none';
+  }
+  function handleFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      currentImageData = ev.target.result;
+      const img = document.getElementById('previewImg');
+      img.src = currentImageData;
+      img.style.display = 'block';
+      document.querySelector('#imgUploadArea .upload-icon').style.display = 'none';
+      document.querySelector('#imgUploadArea .upload-hint').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+  function previewUrl() {
+    const url = document.getElementById('candImgUrl').value.trim();
+    if (!url) return;
+    currentImageData = url;
+    const img = document.getElementById('previewImg');
+    img.src = url;
+    img.style.display = 'block';
+    document.querySelector('#imgUploadArea .upload-icon').style.display = 'none';
+    document.querySelector('#imgUploadArea .upload-hint').style.display = 'none';
+  }
+
+  // ── 후보 추가 ──
+  function addCandidate() {
+    const name = document.getElementById('candName').value.trim();
+    if (!name) { document.getElementById('candName').focus(); return; }
+    const urlVal = document.getElementById('candImgUrl').value.trim();
+    const img = currentImageData || urlVal || null;
+    candidates.push({ id: Date.now(), name, desc: document.getElementById('candDesc').value.trim(), img });
+    renderCandidates();
+    closeModal();
+    updateUI();
+  }
+
+  // ── 렌더링 ──
+  function renderCandidates() {
+    const grid = document.getElementById('candidatesGrid');
+    grid.innerHTML = '';
+    candidates.forEach((c, i) => {
+      const el = document.createElement('div');
+      el.className = 'candidate-card';
+      el.innerHTML = `
+        <div class="img-area">
+          ${c.img ? `<img src="${c.img}" onerror="this.style.display='none'" />` : '<div class="img-placeholder">😶</div>'}
+        </div>
+        <div class="name-area">
+          <div class="cand-name">${escapeHtml(c.name)}</div>
+          <div class="cand-desc">${escapeHtml(c.desc || '')}</div>
+        </div>
+        <button class="remove-btn" onclick="removeCandidate(${i}, event)">✕</button>
+      `;
+      grid.appendChild(el);
+    });
+    // 추가 버튼
+    const addEl = document.createElement('div');
+    addEl.className = 'add-card';
+    addEl.innerHTML = '<div class="plus">＋</div><div>후보 추가</div>';
+    addEl.onclick = openModal;
+    grid.appendChild(addEl);
+  }
+
+  function removeCandidate(i, e) {
+    e.stopPropagation();
+    candidates.splice(i, 1);
+    renderCandidates();
+    updateUI();
+  }
+
+  function updateUI() {
+    const n = candidates.length;
+    document.getElementById('countNum').textContent = n;
+    document.getElementById('generateBtn').disabled = n < 4;
+
+    // 라운드 버튼 상태
+    document.querySelectorAll('.option-btn').forEach(btn => {
+      const r = parseInt(btn.dataset.r);
+      btn.disabled = n < r;
+      btn.style.opacity = n < r ? '0.35' : '1';
+    });
+    document.getElementById('roundHint').textContent =
+      n < 4 ? '후보를 4명 이상 추가하면 라운드를 선택할 수 있어요.' :
+      `현재 ${n}명 · ${selectedRound}강으로 진행됩니다`;
+  }
+
+  // ── 라운드 선택 ──
+  document.querySelectorAll('.option-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedRound = parseInt(btn.dataset.r);
+      updateUI();
+    });
+  });
+
+  // ── 링크 생성 ──
+  function generateLink() {
+    const title = document.getElementById('wcTitle').value.trim() || '이상형 월드컵';
+    const desc = document.getElementById('wcDesc').value.trim();
+
+    // 라운드에 맞게 후보 섞기
+    const shuffled = [...candidates].sort(() => Math.random() - 0.5).slice(0, selectedRound);
+
+    const data = { title, desc, round: selectedRound, candidates: shuffled };
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+
+    const baseUrl = window.location.href.replace(/\/[^/]*$/, '/') + 'play.html';
+    const link = `${baseUrl}#d=${encoded}`;
+
+    document.getElementById('shareLink').value = link;
+    document.getElementById('playNowBtn').href = link;
+    document.getElementById('shareBox').classList.add('show');
+    document.getElementById('shareBox').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function copyLink() {
+    const val = document.getElementById('shareLink').value;
+    navigator.clipboard.writeText(val).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      btn.textContent = '✓ 복사됨!';
+      setTimeout(() => btn.textContent = '복사', 1800);
+    });
+  }
+
+  // ── Enter 키 ──
+  document.getElementById('candName').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addCandidate();
+  });
+
+  function escapeHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // 초기화
+  updateUI();
+</script>
+</body>
+</html>
