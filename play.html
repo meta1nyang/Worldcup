@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>이상형 월드컵</title>
+  <meta property="og:title" content="이상형 월드컵" />
+  <meta property="og:description" content="클릭해서 플레이해봐!" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;800;900&family=Black+Han+Sans&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d0d0f;
+      --surface: #18181c;
+      --surface2: #222228;
+      --border: #2e2e38;
+      --accent: #ff3f6c;
+      --accent2: #ff7043;
+      --text: #f0f0f5;
+      --muted: #8888a0;
+      --win: #22d3a0;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Sans KR', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── 헤더 ── */
+    header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo-small {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none; color: var(--text);
+    }
+    .logo-icon-s {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .logo-txt-s {
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: 16px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .make-btn {
+      padding: 7px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-weight: 600;
+      background: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .make-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── 로딩/에러 ── */
+    #loadScreen {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      min-height: 80vh;
+      gap: 12px;
+      color: var(--muted);
+    }
+    #loadScreen .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── 게임 UI ── */
+    #gameScreen { display: none; }
+
+    .game-header {
+      text-align: center;
+      padding: 28px 24px 20px;
+    }
+    .wc-title {
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: clamp(20px, 4vw, 32px);
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .wc-desc { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+    /* 진행바 */
+    .progress-wrap {
+      max-width: 500px;
+      margin: 16px auto 0;
+    }
+    .progress-label {
+      display: flex; justify-content: space-between;
+      font-size: 12px; color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .round-badge {
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .progress-bar {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    /* ── VS 카드 영역 ── */
+    .vs-area {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 0 16px;
+      min-height: 420px;
+    }
+
+    .choice-card {
+      flex: 1;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+      transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+      display: flex;
+      flex-direction: column;
+    }
+    .choice-card:hover {
+      border-color: var(--accent);
+      transform: scale(1.02);
+      box-shadow: 0 0 40px rgba(255,63,108,0.2);
+      z-index: 1;
+    }
+    .choice-card .card-img {
+      flex: 1;
+      min-height: 280px;
+      background: var(--surface2);
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+    .choice-card .card-img img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .choice-card .card-img .no-img {
+      font-size: 72px;
+      opacity: 0.25;
+    }
+    .choice-card .card-body {
+      padding: 18px 20px;
+      background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+    }
+    .choice-card .cname {
+      font-size: clamp(18px, 3vw, 26px);
+      font-weight: 900;
+      line-height: 1.2;
+    }
+    .choice-card .cdesc {
+      font-size: 13px;
+      color: rgba(255,255,255,0.6);
+      margin-top: 2px;
+    }
+    .pick-hint {
+      position: absolute;
+      inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,63,108,0.15);
+      opacity: 0;
+      transition: opacity 0.2s;
+      font-size: 32px;
+    }
+    .choice-card:hover .pick-hint { opacity: 1; }
+
+    /* VS 구분자 */
+    .vs-divider {
+      width: 60px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .vs-text {
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: 28px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    /* ── 선택 애니메이션 ── */
+    .choice-card.chosen {
+      border-color: var(--accent);
+      box-shadow: 0 0 60px rgba(255,63,108,0.4);
+      transform: scale(1.04);
+      pointer-events: none;
+    }
+    .choice-card.loser {
+      opacity: 0.3;
+      transform: scale(0.96);
+      pointer-events: none;
+    }
+
+    /* ── 결과 화면 ── */
+    #resultScreen { display: none; }
+
+    .result-wrap {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+      text-align: center;
+    }
+    .trophy-emoji { font-size: 72px; margin-bottom: 12px; animation: bounce 0.6s ease; }
+    @keyframes bounce {
+      0% { transform: scale(0.5); opacity: 0; }
+      70% { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .result-label {
+      font-size: 13px; letter-spacing: 2px;
+      color: var(--accent); font-weight: 600;
+      text-transform: uppercase; margin-bottom: 8px;
+    }
+    .result-title {
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: clamp(24px, 5vw, 40px);
+      margin-bottom: 4px;
+    }
+    .winner-card {
+      background: var(--surface);
+      border: 2px solid var(--win);
+      border-radius: 18px;
+      overflow: hidden;
+      max-width: 320px;
+      margin: 28px auto;
+      box-shadow: 0 0 40px rgba(34,211,160,0.2);
+    }
+    .winner-card .w-img {
+      height: 280px;
+      background: var(--surface2);
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .winner-card .w-img img { width: 100%; height: 100%; object-fit: cover; }
+    .winner-card .w-no-img { font-size: 80px; }
+    .winner-card .w-body {
+      padding: 18px 20px;
+    }
+    .winner-card .w-name {
+      font-size: 24px; font-weight: 900;
+    }
+    .winner-card .w-desc {
+      font-size: 14px; color: var(--muted); margin-top: 4px;
+    }
+
+    /* 결선 경과 */
+    .bracket-section {
+      margin-top: 40px;
+      text-align: left;
+    }
+    .bracket-title {
+      font-size: 14px; font-weight: 700;
+      color: var(--muted); margin-bottom: 14px;
+    }
+    .match-list {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .match-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px;
+    }
+    .match-round { color: var(--muted); font-size: 11px; width: 40px; flex-shrink: 0; }
+    .match-winner { font-weight: 800; color: var(--win); }
+    .match-loser { color: var(--muted); text-decoration: line-through; }
+    .match-vs { color: var(--border); }
+
+    /* 재도전 / 만들기 버튼 */
+    .result-actions {
+      display: flex; gap: 12px; margin-top: 28px;
+      justify-content: center; flex-wrap: wrap;
+    }
+    .res-btn {
+      padding: 13px 28px;
+      border-radius: 12px;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 15px; font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      border: none;
+    }
+    .res-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    .res-btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+    }
+    .res-btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    /* 모바일 */
+    @media (max-width: 580px) {
+      .vs-area { flex-direction: column; }
+      .vs-divider { width: 100%; height: 40px; }
+      .vs-text { font-size: 20px; }
+      .choice-card .card-img { min-height: 200px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="logo-small">
+    <div class="logo-icon-s">🏆</div>
+    <div class="logo-txt-s">이상형 월드컵</div>
+  </a>
+  <a href="index.html" class="make-btn">+ 내 월드컵 만들기</a>
+</header>
+
+<!-- 로딩 -->
+<div id="loadScreen">
+  <div class="spinner"></div>
+  <div>불러오는 중...</div>
+</div>
+
+<!-- 게임 화면 -->
+<div id="gameScreen">
+  <div class="game-header">
+    <div class="wc-title" id="gameTitle">이상형 월드컵</div>
+    <div class="wc-desc" id="gameDesc"></div>
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span><span class="round-badge" id="roundLabel">16강</span> · <span id="matchLabel">1/8 경기</span></span>
+        <span id="progressPct">0%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="vs-area" id="vsArea">
+    <div class="choice-card" id="cardA" onclick="pick('A')">
+      <div class="card-img" id="imgA">
+        <div class="no-img">😶</div>
+      </div>
+      <div class="card-body">
+        <div class="cname" id="nameA">-</div>
+        <div class="cdesc" id="descA"></div>
+      </div>
+      <div class="pick-hint">👆 선택!</div>
+    </div>
+
+    <div class="vs-divider">
+      <div class="vs-text">VS</div>
+    </div>
+
+    <div class="choice-card" id="cardB" onclick="pick('B')">
+      <div class="card-img" id="imgB">
+        <div class="no-img">😶</div>
+      </div>
+      <div class="card-body">
+        <div class="cname" id="nameB">-</div>
+        <div class="cdesc" id="descB"></div>
+      </div>
+      <div class="pick-hint">👆 선택!</div>
+    </div>
+  </div>
+</div>
+
+<!-- 결과 화면 -->
+<div id="resultScreen">
+  <div class="result-wrap">
+    <div class="trophy-emoji">🏆</div>
+    <div class="result-label">최종 우승</div>
+    <div class="result-title" id="winnerTitle">-</div>
+
+    <div class="winner-card">
+      <div class="w-img" id="winnerImg">
+        <div class="w-no-img">😶</div>
+      </div>
+      <div class="w-body">
+        <div class="w-name" id="winnerName">-</div>
+        <div class="w-desc" id="winnerDesc"></div>
+      </div>
+    </div>
+
+    <div class="bracket-section">
+      <div class="bracket-title">⚔️ 경기 결과</div>
+      <div class="match-list" id="matchList"></div>
+    </div>
+
+    <div class="result-actions">
+      <button class="res-btn res-btn-primary" onclick="restart()">🔄 다시 도전하기</button>
+      <a href="index.html" class="res-btn res-btn-secondary">✨ 내 월드컵 만들기</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  let wcData = null;
+  let pool = [];           // 이번 라운드 대진 풀
+  let nextPool = [];       // 다음 라운드 승자
+  let matchIndex = 0;      // 현재 라운드 내 경기 번호
+  let totalMatches = 0;    // 이번 라운드 총 경기 수
+  let matchLog = [];       // 경기 기록
+  let roundName = '';
+  let isAnimating = false;
+
+  // ── 초기화 ──
+  window.addEventListener('load', () => {
+    const hash = location.hash;
+    if (!hash.startsWith('#d=')) {
+      showError('올바른 링크가 아니에요.<br><a href="index.html" style="color:var(--accent)">월드컵 만들러 가기 →</a>');
+      return;
+    }
+    try {
+      const encoded = hash.slice(3);
+      const json = decodeURIComponent(escape(atob(encoded)));
+      wcData = JSON.parse(json);
+      initGame();
+    } catch(e) {
+      showError('데이터를 불러올 수 없어요.<br><a href="index.html" style="color:var(--accent)">월드컵 만들러 가기 →</a>');
+    }
+  });
+
+  function showError(msg) {
+    document.getElementById('loadScreen').innerHTML = `<div style="text-align:center;color:var(--muted);line-height:1.7">${msg}</div>`;
+  }
+
+  function getRoundName(n) {
+    const map = { 2:'결승', 4:'4강', 8:'8강', 16:'16강', 32:'32강' };
+    return map[n] || `${n}강`;
+  }
+
+  // ── 게임 시작 ──
+  function initGame() {
+    document.title = wcData.title + ' — 이상형 월드컵';
+    document.getElementById('gameTitle').textContent = wcData.title;
+    document.getElementById('gameDesc').textContent = wcData.desc || '';
+
+    // 후보 랜덤 셔플
+    pool = [...wcData.candidates].sort(() => Math.random() - 0.5);
+    nextPool = [];
+    matchIndex = 0;
+    matchLog = [];
+    totalMatches = pool.length / 2;
+    roundName = getRoundName(pool.length);
+
+    document.getElementById('loadScreen').style.display = 'none';
+    document.getElementById('gameScreen').style.display = 'block';
+
+    showMatch();
+  }
+
+  function showMatch() {
+    const a = pool[matchIndex * 2];
+    const b = pool[matchIndex * 2 + 1];
+
+    // 진행바
+    const done = matchLog.length;
+    const total = wcData.candidates.length - 1;
+    const pct = Math.round((done / total) * 100);
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressPct').textContent = pct + '%';
+    document.getElementById('roundLabel').textContent = roundName;
+    document.getElementById('matchLabel').textContent = `${matchIndex + 1}/${totalMatches} 경기`;
+
+    // 카드 A
+    setCard('A', a);
+    setCard('B', b);
+
+    // 애니메이션 리셋
+    document.getElementById('cardA').className = 'choice-card';
+    document.getElementById('cardB').className = 'choice-card';
+    isAnimating = false;
+  }
+
+  function setCard(side, c) {
+    const imgEl = document.getElementById('img' + side);
+    const nameEl = document.getElementById('name' + side);
+    const descEl = document.getElementById('desc' + side);
+
+    nameEl.textContent = c.name;
+    descEl.textContent = c.desc || '';
+
+    if (c.img) {
+      imgEl.innerHTML = `<img src="${escapeHtml(c.img)}" alt="${escapeHtml(c.name)}" onerror="this.parentElement.innerHTML='<div class=\\"no-img\\">😶</div>'" />`;
+    } else {
+      imgEl.innerHTML = `<div class="no-img">😶</div>`;
+    }
+  }
+
+  function pick(side) {
+    if (isAnimating) return;
+    isAnimating = true;
+
+    const a = pool[matchIndex * 2];
+    const b = pool[matchIndex * 2 + 1];
+    const winner = side === 'A' ? a : b;
+    const loser  = side === 'A' ? b : a;
+
+    document.getElementById('card' + side).classList.add('chosen');
+    document.getElementById('card' + (side === 'A' ? 'B' : 'A')).classList.add('loser');
+
+    matchLog.push({ round: roundName, winner: winner.name, loser: loser.name });
+    nextPool.push(winner);
+
+    setTimeout(() => {
+      matchIndex++;
+      if (matchIndex >= totalMatches) {
+        // 라운드 종료
+        if (nextPool.length === 1) {
+          showResult(nextPool[0]);
+        } else {
+          // 다음 라운드
+          pool = [...nextPool].sort(() => Math.random() - 0.5);
+          nextPool = [];
+          matchIndex = 0;
+          totalMatches = pool.length / 2;
+          roundName = getRoundName(pool.length);
+          showMatch();
+        }
+      } else {
+        showMatch();
+      }
+    }, 600);
+  }
+
+  // ── 결과 ──
+  function showResult(winner) {
+    document.getElementById('gameScreen').style.display = 'none';
+    document.getElementById('resultScreen').style.display = 'block';
+    document.getElementById('progressFill').style.width = '100%';
+
+    document.getElementById('winnerTitle').textContent = `"${winner.name}"이(가) 우승!`;
+    document.getElementById('winnerName').textContent = winner.name;
+    document.getElementById('winnerDesc').textContent = winner.desc || '';
+
+    const imgEl = document.getElementById('winnerImg');
+    if (winner.img) {
+      imgEl.innerHTML = `<img src="${escapeHtml(winner.img)}" alt="${escapeHtml(winner.name)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<div class=\\"w-no-img\\">🏆</div>'" />`;
+    } else {
+      imgEl.innerHTML = `<div class="w-no-img">🏆</div>`;
+    }
+
+    // 경기 기록 (역순)
+    const list = document.getElementById('matchList');
+    list.innerHTML = [...matchLog].reverse().map(m => `
+      <div class="match-item">
+        <span class="match-round">${m.round}</span>
+        <span class="match-winner">🏆 ${m.winner}</span>
+        <span class="match-vs">vs</span>
+        <span class="match-loser">${m.loser}</span>
+      </div>
+    `).join('');
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function restart() {
+    initGame();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('resultScreen').style.display = 'none';
+    document.getElementById('gameScreen').style.display = 'block';
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>
